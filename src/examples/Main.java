@@ -5,6 +5,10 @@
  */
 package examples;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -44,6 +48,8 @@ public class Main
             case 3:
                 break;
             case 4:
+                // -file c:\bat.bat -contains error
+                // -file c:\bat.bat -countLines error
                 kword1 = args[0]; //keyWORD: file
                 kword2 = args[2]; //keyWORD: contains or countLines or existAt
                 
@@ -64,6 +70,8 @@ public class Main
             case 5:
                 break;
             case 6:
+                //-file c:\bat.bat -contains error atLine 7
+                //-file c:\bat.bat -contains error atLast 3
                 kword1 = args[0]; //keyWORD: file
                 kword2 = args[2]; //keyWORD: contains
                 kword3 = args[4]; //keyWORD: existAt/atLine or at-Number/position/line-FromLast
@@ -219,12 +227,46 @@ public class Main
      {
         System.out.println("*****************************************************************************");
         System.out.println("HELP:\n (How to use)");
-        System.out.println("-help (For help = THIS TEXT)");
-        System.out.println("-file c:\file.ext -contains string \n");
-        System.out.println("-search youtString -method topdown (For Top-Down search of a string)");
-        System.out.println("-search youtString -method downup (For Down-UP search of a string)");
+        System.out.println("-help (For help = THIS TEXT) \n Commands:");
+        System.out.println("-file param1 -contains param2");
+        System.out.println("-file param1 -countLines param2");
+        
+        System.out.println("-file c:\\bat.bat -contains error");
+        System.out.println("-file c:\\bat.bat -countLines error");
+        System.out.println("-file c:\\bat.bat -contains error atLine 7");
+        System.out.println("-file c:\\bat.bat -contains error atLast 3");
+
         System.out.println("");
         System.out.println(" '-' in front of a keyWord is not mandatory: search youtString method topdown");
         System.out.println("*****************************************************************************");
      }
+     private static final String newLine = System.getProperty("line.separator");
+
+private synchronized void writeToFile(String fileName, String msg)  
+{
+    PrintWriter printWriter = null;
+    File file = new File(fileName);
+    try 
+    {
+        if (!file.exists()) file.createNewFile();
+        printWriter = new PrintWriter(new FileOutputStream(fileName, true));
+        printWriter.write(newLine + msg);
+    } 
+    catch (IOException ioex) 
+    {
+        ioex.printStackTrace();
+    } 
+    catch (Exception e) 
+    {
+        e.printStackTrace();
+    }
+    finally 
+    {
+        if (printWriter != null) {
+            printWriter.flush();
+            printWriter.close();
+        }
+    }
+}
+
 }
