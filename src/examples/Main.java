@@ -27,10 +27,16 @@ public class Main
     static String kword2 = "";
     static String kword3 = "";
     static String kword4 = "";
+    
     static String arg1 = "";
     static String arg2 = "";
     static String arg3 = "";
     static String arg4 = "";
+    
+    static long startTime;
+    static long endTime;
+    static long elapsedTime;
+    
     public static void printReceivedArgs(String args[])
     {
         String commandLine = "";
@@ -42,6 +48,8 @@ public class Main
     }
      public static void main(String args[]) 
      {
+        startTime = System.currentTimeMillis();
+        System.out.println("Started at: " + getHumanTimeFormatFromMilliseconds(startTime));
         printReceivedArgs(args);
         switch (args.length)
         {
@@ -150,7 +158,7 @@ public class Main
                 //-file C:\\file -contains 'error' >> outputFileErrorLines except 'string'
                 else if(kword1.toLowerCase().contains("file") && kword2.toLowerCase().contains("contains") && kword3.toLowerCase().contains(">") && kword4.toLowerCase().contains("except"))
                 {
-                  boolean result = printMatchingStringsInFile(arg2, arg1, arg3, arg4);
+                  int result = printMatchingStringsInFile(arg2, arg1, arg3, arg4);
                   System.out.println("result: " + result);
                 }
                 break;
@@ -159,13 +167,72 @@ public class Main
                 showHelp();
             break;
         }
-         System.out.println("End of process");
+         showElapsedTime();
      }
+    public static void showElapsedTime()
+    {
+        endTime = System.currentTimeMillis();
+        System.out.println("Ended at: " + getHumanTimeFormatFromMilliseconds(endTime));
+        elapsedTime = endTime-startTime;
+        String humanTime = getHumanTimeFormatFromMilliseconds(elapsedTime);
+        System.out.println("End of process. Elapsed time: " + humanTime );
+    }
+    public static String getHumanTimeFormatFromMilliseconds(long millisecondS)
+    {
+        String message = "";
+        long milliseconds = millisecondS;
+        if (milliseconds >= 1000){
+            int seconds = (int) (milliseconds / 1000) % 60;
+            int minutes = (int) ((milliseconds / (1000 * 60)) % 60);
+            int hours = (int) ((milliseconds / (1000 * 60 * 60)) % 24);
+            int days = (int) (milliseconds / (1000 * 60 * 60 * 24));
+            if((days == 0) && (hours != 0)){
+                message = String.format("%d hours %d min %d sec ", hours, minutes, seconds);
+            }else if((hours == 0) && (minutes != 0)){
+                message = String.format("%d min %d sec ", minutes, seconds);
+            }else if((days == 0) && (hours == 0) && (minutes == 0)){
+                message = String.format("%d sec + " + (millisecondS-1000) + " ms", seconds);
+            }else{
+                message = String.format("%d h %d m %d s ", hours, minutes, seconds);
+            }
+        } else{
+            message = "Less than a second. " + milliseconds + " ms";
+        }
+        return message;
+    }
      public static boolean replaceMatchingStringInFile(String fileName, String toUpdate, String updated)
      {
         boolean result = updateLineInFile(fileName,toUpdate,updated);
         return result;
      }
+     public static void printFileSize(File file)
+     {
+         if(file.exists())
+         {
+            double bytes     = round(file.length(),2);
+            double kilobytes = round((bytes / 1024),2);
+            double megabytes = round((kilobytes / 1024),2);
+            if(bytes<=1024)
+            {
+             System.out.println("File: " + file.getName() + " size: " + bytes + " bytes " + kilobytes + " kbts");   
+            }
+            else if(bytes>1024 && kilobytes<=1024)
+            {
+                System.out.println("File: " + file.getName() + " size: " + kilobytes + " kbts");   
+            }
+            else if(kilobytes>1024)
+            {
+                System.out.println("File: " + file.getName() + " size: "+ megabytes+" MB" + kilobytes + " KB");   
+            }
+         }
+     }
+     public static double round(double value, int places) 
+     {
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
+    }
     private static boolean updateLineInFile(String fileName, String toUpdate, String updated) 
     {
         /**
@@ -186,10 +253,11 @@ public class Main
         try
         {
             File file = new File(fileName);
+            printFileSize(file);
             BufferedReader br = new BufferedReader(new FileReader(file));
             PrintWriter writer = new PrintWriter(new File(fileName), "UTF-8"); // orig PrintWriter writer = new PrintWriter(new File(file+".out"), "UTF-8");
             String line;
-
+            
             while ((line = br.readLine()) != null)
             {
                 line = line.replace(toUpdate, updated);
@@ -226,10 +294,10 @@ public class Main
                 tobeUpdated = updated;
             }
             File file = new File(fileName);
+            printFileSize(file);
             BufferedReader br = new BufferedReader(new FileReader(file));
             String line;
             String input = "";
-
             while ((line = br.readLine()) != null)
                 input += line + System.lineSeparator();  // OLD NAD BAD input += line + "\n";    
             
@@ -248,7 +316,7 @@ public class Main
 
             br.close();
             os.close();
-            
+            printFileSize(file);
             return true;
         }
         catch (IOException e)
@@ -263,13 +331,16 @@ public class Main
         }
         //return true;
     }
-     public static boolean isStringInFileLine(String cadena, String filename, String lineNumber)
+     public static boolean isStringInFileLine(String cadena, String fileName, String lineNumber)
      {
          try
          {
             int lineNum = Integer.valueOf(lineNumber);
-            List<String> lines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
+            List<String> lines = Files.readAllLines(Paths.get(fileName), Charset.defaultCharset());
+            File file = new File(fileName);
+            printFileSize(file);
             int i = 0; 
+            System.out.println("File lines:" + lines.size());
             for (String line: lines)
              {
                  i++;
@@ -296,16 +367,16 @@ public class Main
             return false;
          }
      }
-     public static boolean isStringInFileLineFromLast(String cadena, String filename, String lineNumberFromlast)
+     public static boolean isStringInFileLineFromLast(String cadena, String fileName, String lineNumberFromlast)
      {
          try
          {
             int lineNumFromlast = Integer.valueOf(lineNumberFromlast);
-            
-            List<String> lines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
-            
+            File file = new File(fileName);
+            printFileSize(file);
+            List<String> lines = Files.readAllLines(Paths.get(fileName), Charset.defaultCharset());
+            System.out.println("Search from the bottom ! -> File lines:" + lines.size());
             int lineNum = lines.size()-lineNumFromlast;
-            
             int i = 0; 
             for (String line: lines)
              {
@@ -338,11 +409,14 @@ public class Main
             return false;
          }
      }
-     public static boolean isStringInFile(String cadena, String filename)
+     public static boolean isStringInFile(String cadena, String fileName)
      {
          try
          {
-            List<String> lines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
+            List<String> lines = Files.readAllLines(Paths.get(fileName), Charset.defaultCharset());
+            File file = new File(fileName);
+            printFileSize(file);
+            System.out.println("File lines:" + lines.size());
             int i = 0; 
             for (String line: lines)
              {
@@ -363,11 +437,14 @@ public class Main
             return false;
          }
      }
-     public static int getCountLinesFoundInFile(String cadena, String filename)
+     public static int getCountLinesFoundInFile(String cadena, String fileName)
      {
          try
          {
-            List<String> lines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
+            List<String> lines = Files.readAllLines(Paths.get(fileName), Charset.defaultCharset());
+            System.out.println("File lines:" + lines.size());
+            File file = new File(fileName);
+            printFileSize(file);
             int i = 0; 
             for (String line: lines)
              {
@@ -387,12 +464,15 @@ public class Main
             return 0;
          }
      }
-     public static int printMatchingStringsInFile(String cadena, String filename, String outputFilename, String excludeString)
+     public static int printMatchingStringsInFile(String cadena, String fileName, String outputFilename, String excludeString)
      {
          try
          {
             int countMatches = 0;
-            List<String> lines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
+            List<String> lines = Files.readAllLines(Paths.get(fileName), Charset.defaultCharset());
+            System.out.println("File lines:" + lines.size());
+            File file = new File(fileName);
+            printFileSize(file);
             int i = 0; 
             for (String line: lines)
              {
@@ -419,11 +499,13 @@ public class Main
                         String printLine = "Result printMatchingStringsInFile: String found at line: " + i + "/" + lines.size();
                         System.out.println(printLine);
                         String outputLine = line + " @L"+i+"/"+lines.size();
-                        writeToFile(outputFilename,outputLine);  
+                        writeToFile(outputFilename,outputLine); 
                         countMatches++;
                      }
                  }
-             }
+             }   
+            file = new File(outputFilename);
+            printFileSize(file);
             return countMatches;
          }
          catch(Exception e)
@@ -469,6 +551,8 @@ public class Main
         System.out.println("* [ 9] Implicit:Removes the demoSplashScreen function for Designer WATERMARK in the specified file");
         System.out.println("* [10] Implicit:Removes the demoSplashScreen function for Designer WATERMARK in the output file");
         System.out.println("* ");
+        System.out.println("* Log is traced and shows readed files size and lines, also shows the Elapsed time.");
+        System.out.println("* ");
         System.out.println("*   .•°¤*(¯`★´¯)*¤° LogTracker °¤*(¯´★`¯)*¤°•. end");
         System.out.println("***************************************************");
      }
@@ -481,6 +565,7 @@ private static synchronized void writeToFile(String fileName, String msg)
     try 
     {
         if (!file.exists()) file.createNewFile();
+        printFileSize(file);
         printWriter = new PrintWriter(new FileOutputStream(fileName, true));
         printWriter.write(newLine + msg);
     } 
